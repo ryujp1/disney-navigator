@@ -77,7 +77,7 @@ st.divider()
 col1, col2 = st.columns(2)
 with col1:
     options = sorted(spot_list.keys()) if spot_list else ["施設データなし"]
-    start_node_name = st.selectbox("出発地（アトラクションから選ぶ）", options, key=f"start_{park_choice}")
+    start_node_name = st.selectbox("出発地（現在地 または アトラクション）", ["現在地"] + options, key=f"start_{park_choice}")
 with col2:
     end_node_name = st.selectbox("目的地", options, key=f"end_{park_choice}")
 
@@ -88,9 +88,13 @@ if st.button("最短ルートを表示する", type="primary"):
     else:
         dest_node = spot_list[end_node_name]
         
-        # GPSデータがあれば現在地を優先、なければ選択肢の出発地を使用
-        if loc:
-            orig_node = ox.distance.nearest_nodes(G, X=loc['lon'], Y=loc['lat'])
+        # ドロップダウンで「現在地」が選ばれたか、アトラクションが選ばれたかで分岐
+        if start_node_name == "現在地":
+            if loc:
+                orig_node = ox.distance.nearest_nodes(G, X=loc['lon'], Y=loc['lat'])
+            else:
+                st.warning("現在地が取得できていません。ブラウザの位置情報許可を確認するか、別のアトラクションを出発地に選んでください。")
+                st.stop() # エラーを防ぐためここで計算をストップ
         else:
             orig_node = spot_list[start_node_name]
         
@@ -105,7 +109,9 @@ if st.button("最短ルートを表示する", type="primary"):
             st.session_state.route_data = {
                 'route_coords': route_coords,
                 'distance': int(distance),
-                'walk_time': walk_time
+                'walk_time': walk_time,
+                'start_name': start_node_name, # 出発地の名前を保存
+                'end_name': end_node_name      # 目的地の名前を保存
             }
         except Exception:
             st.error("経路が見つかりませんでした。")
@@ -118,11 +124,12 @@ if st.session_state.route_data:
     m = folium.Map(location=data['route_coords'][0], zoom_start=17)
     folium.PolyLine(data['route_coords'], color="red", weight=6, opacity=0.8).add_to(m)
     
-    # マーカー
-    folium.Marker(data['route_coords'][0], popup="出発", icon=folium.Icon(color='blue')).add_to(m)
-    folium.Marker(data['route_coords'][-1], popup="目的地", icon=folium.Icon(color='red')).add_to(m)
+    # マーカー（保存した名前をpopupに表示）
+    folium.Marker(data['route_coords'][0], popup=data['start_name'], icon=folium.Icon(color='blue')).add_to(m)
+    folium.Marker(data['route_coords'][-1], popup=data['end_name'], icon=folium.Icon(color='red')).add_to(m)
     
     # returned_objects=[] で再描画のループを防ぎ軽量化
 
     st_folium(m, width=1000, height=600, key=f"map_{park_choice}", returned_objects=[], use_container_width=True)
+
 
