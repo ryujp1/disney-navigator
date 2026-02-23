@@ -6,7 +6,7 @@ import networkx as nx
 import osmnx as ox
 import streamlit as st
 from streamlit_folium import st_folium
-from streamlit_js_eval import streamlit_js_eval
+from streamlit_js_eval import streamlit_js_eval, get_geolocation
 
 st.set_page_config(page_title="TDR Path Finder", layout="wide")
 st.title("ディズニー専用 最短ルートナビ")
@@ -59,10 +59,15 @@ with st.spinner(f"{park_choice}のデータを読み込み中..."):
     G, spot_list = get_park_data(park_choice)
 
 st.subheader("📍 現在地を取得")
-loc = streamlit_js_eval(
-    js_expressions="target.navigator.geolocation.getCurrentPosition(pos => {return {lat: pos.coords.latitude, lon: pos.coords.longitude}})", 
-    key="get_location"
-)
+# 専用の関数を使って非同期処理の完了を待つ
+loc_data = get_geolocation()
+
+loc = None
+if loc_data and 'coords' in loc_data:
+    loc = {
+        'lat': loc_data['coords']['latitude'],
+        'lon': loc_data['coords']['longitude']
+    }
 
 if loc:
     st.info(f"現在地を取得しました (緯度: {loc['lat']}, 経度: {loc['lon']})")
@@ -120,3 +125,4 @@ if st.session_state.route_data:
     # returned_objects=[] で再描画のループを防ぎ軽量化
 
     st_folium(m, width=1000, height=600, key=f"map_{park_choice}", returned_objects=[], use_container_width=True)
+
