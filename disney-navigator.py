@@ -9,7 +9,7 @@ from streamlit_folium import st_folium
 from streamlit_js_eval import streamlit_js_eval
 
 st.set_page_config(page_title="TDR Path Finder", layout="wide")
-st.title("🎡 ディズニー専用 最短ルートナビ")
+st.title("ディズニー専用 最短ルートナビ")
 
 @st.cache_resource
 def get_park_data(park_type):
@@ -118,4 +118,5 @@ if st.session_state.route_data:
     folium.Marker(data['route_coords'][-1], popup="目的地", icon=folium.Icon(color='red')).add_to(m)
     
     # returned_objects=[] で再描画のループを防ぎ軽量化
+
     st_folium(m, width=1000, height=600, key=f"map_{park_choice}", returned_objects=[], use_container_width=True)
