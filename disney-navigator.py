@@ -88,13 +88,15 @@ if st.button("最短ルートを表示する", type="primary"):
     else:
         dest_node = spot_list[end_node_name]
         
-        # ドロップダウンで「現在地」が選ばれたか、アトラクションが選ばれたかで分岐
+# ドロップダウンで「現在地」が選ばれたか、アトラクションが選ばれたかで分岐
         if start_node_name == "現在地":
             if loc:
-                orig_node = ox.distance.nearest_nodes(G, X=loc['lon'], Y=loc['lat'])
-            else:
-                st.warning("現在地が取得できていません。ブラウザの位置情報許可を確認するか、別のアトラクションを出発地に選んでください。")
-                st.stop() # エラーを防ぐためここで計算をストップ
+                # ★ジオフェンス：ディズニーリゾート周辺の緯度経度範囲を定義
+                if (35.620 < loc['lat'] < 35.645) and (139.870 < loc['lon'] < 139.895):
+                    orig_node = ox.distance.nearest_nodes(G, X=loc['lon'], Y=loc['lat'])
+                else:
+                    st.warning("現在地がパーク外（指定エリア外）です。パーク内に入るか、出発地にアトラクションを選択してください。")
+                    st.stop()
         else:
             orig_node = spot_list[start_node_name]
         
@@ -131,5 +133,6 @@ if st.session_state.route_data:
     # returned_objects=[] で再描画のループを防ぎ軽量化
 
     st_folium(m, width=1000, height=600, key=f"map_{park_choice}", returned_objects=[], use_container_width=True)
+
 
 
