@@ -4,3 +4,4 @@ networkx
 folium
 streamlit-folium
 streamlit-js-eval
+scikit-learn
